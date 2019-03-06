@@ -30,7 +30,7 @@ func main() {
 	//用于读写etcd的键值对
 	kv = clientv3.NewKV(client)
 
-	if getResp,err = kv.Get(context.TODO(),"/cron/jobs/job1",/*clientv3.WithCountOnly()*/);err != nil {
+	if getResp,err = kv.Get(context.TODO(),"/cron/jobs/",clientv3.WithPrefix()/*clientv3.WithCountOnly()*/);err != nil {
 		fmt.Println(err)
 	}else {
 		fmt.Println(getResp.Kvs,getResp.Count)
