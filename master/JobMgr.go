@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/drzhangg/go-crontab/common"
 	"time"
 )
@@ -118,6 +119,76 @@ func (jobMgr *JobMgr) DeleteJob(name string) (oldJob *common.Job, err error) {
 		}
 
 		oldJob = &oldJobObj
+	}
+	return
+}
+
+//列举全部任务
+func (jobMgr *JobMgr) ListJobs() (jobLists []*common.Job, err error) {
+	var (
+		jobKey  string
+		getResp *clientv3.GetResponse
+		kvPair  *mvccpb.KeyValue
+		job     *common.Job
+	)
+
+	//获取etcd的目录key
+	jobKey = common.JOB_SAVE_DIR
+
+	//获取父目录下的所有任务
+	getResp, err = jobMgr.kv.Get(context.TODO(), jobKey, clientv3.WithPrefix())
+	if err != nil {
+		fmt.Println("getResp list failed:", err)
+		return
+	}
+
+	jobLists = make([]*common.Job, 0)
+
+	//遍历所有任务，进行反序列化
+	for _, kvPair = range getResp.Kvs {
+		job = &common.Job{}
+		//json.Unamrshal(k,v)   k是读取到的json字符串，要解析的；v是要讲json解析成的类型
+		if err = json.Unmarshal(kvPair.Value, &job); err != nil {
+			err = nil
+			continue
+		}
+
+		jobLists = append(jobLists, job)
+	}
+	return
+}
+
+//杀死任务
+func (jobMgr *JobMgr) KillJob(name string) (err error) {
+	var (
+		killKey        string
+		leaseGrantResp *clientv3.LeaseGrantResponse
+		leaseId        clientv3.LeaseID
+	)
+
+	//获取job的key
+	killKey = common.JOB_KILLER_DIR + name
+
+	//让worker监听一个put操作，创建一个租约让其稍后自动过期即可
+	//创建一个租约
+	leaseGrantResp, err = jobMgr.lease.Grant(context.TODO(), 1)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	//获取租约id
+	leaseId = leaseGrantResp.ID
+
+	/**
+	这里其实是每次put进etcd中一个空值，然后给他一个1秒的租约，当租约过期时，这个etcd就会被delete，
+	以此达到kill的效果
+	 */
+	//设置kill标记
+	_, err = jobMgr.kv.Put(context.TODO(), killKey, "", clientv3.WithLease(leaseId))
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 	return
 }

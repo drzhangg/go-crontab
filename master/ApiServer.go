@@ -30,8 +30,10 @@ func InitApiServer() (err error) {
 
 	//配置路由
 	mux = http.NewServeMux()
-	mux.HandleFunc("/job/save", handleJobSave)
-	mux.HandleFunc("/job/delete", handleJobDelete)
+	mux.HandleFunc("/job/save", handleJobSave)     //保存任务
+	mux.HandleFunc("/job/delete", handleJobDelete) //删除任务
+	mux.HandleFunc("/job/list", handleJobList)     //获取全部job
+	mux.HandleFunc("/job/kill", handleJobKill)     //杀死指定job
 
 	//启动tcp监听
 	listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort))
@@ -141,5 +143,71 @@ ERR:
 	resp, err = common.BuildResponse(-1, err.Error(), nil)
 	if err == nil {
 		w.Write(resp)
+	}
+}
+
+//获取jobList
+//GET /job/list
+func handleJobList(w http.ResponseWriter, r *http.Request) {
+
+	var (
+		err     error
+		jobList []*common.Job
+		resp    []byte
+	)
+
+	//读取全部任务
+	jobList, err = G_jobMgr.ListJobs()
+	if err != nil {
+		fmt.Println("get JobList failed:", err)
+		goto ERR
+	}
+
+	//请求成功，返回请求
+	resp, err = common.BuildResponse(0, "success", jobList)
+	if err == nil {
+		w.Write(resp)
+	}
+
+	return
+ERR:
+	//请求失败
+	resp, err = common.BuildResponse(-1, err.Error(), nil)
+	if err == nil {
+		w.Write(resp)
+	}
+}
+
+//杀死任务
+//POST /job/kill name=job1
+func handleJobKill(w http.ResponseWriter, r *http.Request) {
+	var (
+		err     error
+		jobName string
+		byte    []byte
+	)
+
+	if err = r.ParseForm(); err != nil {
+		goto ERR
+	}
+
+	jobName = r.PostForm.Get("name")
+
+	//杀死一个任务
+	err = G_jobMgr.KillJob(jobName)
+	if err != nil {
+		goto ERR
+	}
+
+	byte, err = common.BuildResponse(0, "success", nil)
+	if err == nil {
+		w.Write(byte)
+	}
+
+	return
+ERR:
+	byte, err = common.BuildResponse(-1, err.Error(), nil)
+	if err == nil {
+		w.Write(byte)
 	}
 }
