@@ -57,18 +57,17 @@ func InitJobMgr() (err error) {
 	return
 }
 
-
 //保存接口
 func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 	var (
-		jobKey   string
-		jobValue []byte
-		putResp  *clientv3.PutResponse
+		jobKey    string
+		jobValue  []byte
+		putResp   *clientv3.PutResponse
 		oldJobObj common.Job
 	)
 
 	//etcd的保存key
-	jobKey = "/cron/jobs/" + job.Name
+	jobKey = common.JOB_SAVE_DIR + job.Name
 
 	//json解析job
 	if jobValue, err = json.Marshal(job); err != nil {
@@ -87,6 +86,37 @@ func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 			err = nil
 			return
 		}
+		oldJob = &oldJobObj
+	}
+	return
+}
+
+//删除job
+func (jobMgr *JobMgr) DeleteJob(name string) (oldJob *common.Job, err error) {
+	var (
+		jobName   string
+		delResp   *clientv3.DeleteResponse
+		oldJobObj common.Job
+	)
+
+	//获取etcd中保存的key
+	jobName = common.JOB_SAVE_DIR + name
+
+	//通过获取的key删除etcd
+	delResp, err = jobMgr.kv.Delete(context.TODO(), jobName, clientv3.WithPrevKV())
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	//返回被删除的信息
+	if len(delResp.PrevKvs) != 0 {
+		//解析被删除的旧值，并返回
+		if err = json.Unmarshal(delResp.PrevKvs[0].Value, &oldJobObj); err != nil {
+			err = nil
+			return
+		}
+
 		oldJob = &oldJobObj
 	}
 	return
