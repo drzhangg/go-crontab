@@ -1,6 +1,9 @@
 package common
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 //定时任务
 type Job struct {
@@ -28,5 +31,21 @@ func BuildResponse(errno int, msg string, data interface{}) (resp []byte, err er
 
 	//序列化json
 	resp, err = json.Marshal(response)
+	return
+}
+
+//反序列化job
+func UnpackJob(value []byte) (ret *Job, err error) {
+	var (
+		job *Job
+	)
+
+	job = &Job{}
+	if err = json.Unmarshal(value, job); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	ret = job
 	return
 }
