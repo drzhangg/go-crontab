@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Golang 分布式Crontab</title>
+
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="page-header">
+                <h1>管理后台
+                    <small>Golang分布式Crontab</small>
+                </h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能按钮-->
+    <div class="row">
+        <div class="col-md-12">
+            <button type="button" class="btn btn-primary">新建任务</button>
+        </div>
+    </div>
+
+    <!-- 任务列表-->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default" style="margin-top:20px;">
+                <div class="panel-body">
+                    <table id="job-list" class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>任务名称</th>
+                            <th>shell命令</th>
+                            <th>cron表达式</th>
+                            <th>任务操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        //1.绑定按钮的事件处理函数
+        //用JavaScript委托机制，DOM事件冒泡的一个关键与原理
+        $("#job-list").on("click", ".edit-job", function (event) {
+            console.log("编辑按钮")
+        })
+        $("#job-list").on("click", ".del-job", function (event) {
+            console.log("删除按钮")
+        })
+        $("#job-list").on("click", ".kill-job", function (event) {
+            console.log("强杀按钮")
+        })
+
+        //2.定义一个函数，用于刷新任务列表
+        function rebuildJobList() {
+            $.ajax({
+                url: "/job/list",
+                dataType: 'json',
+                success: function (resp) {
+
+                    if (resp.errNo != 0) {  //服务端出错了
+                        return
+                    }
+
+                    //任务数组
+                    var jobList = resp.data
+                    //清理列表
+                    $('#job-list tbody').empty();
+                    //遍历任务，填充table
+                    for (var i = 0; i < jobList.length; i++) {
+                        var job = jobList[i];
+
+                        var tr = $("<tr>")
+                        tr.append($('<td class="job-name">').html(job.name))
+                        tr.append($('<td class="job-command">').html(job.command))
+                        tr.append($('<td class="job-cronExpr">').html(job.cronExpr))
+                        var toolbar = $('<div class="btn-toolbar">')
+                                .append('<button class="btn btn-info edit-job">编辑</button>')
+                                .append('<button class="btn btn-danger del-job">删除</button>')
+                                .append('<button class="btn btn-warning kill-job">强杀</button>')
+                        tr.append($('<td>').append(toolbar))
+                        $("#job-list tbody").append(tr)
+                    }
+                }
+            })
+        }
+
+        rebuildJobList()
+    })
+</script>
+</body>
+</html>
