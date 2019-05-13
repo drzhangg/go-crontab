@@ -25,7 +25,9 @@ func InitApiServer() (err error) {
 		mux      *http.ServeMux
 		listener net.Listener
 
-		httpServer *http.Server
+		httpServer    *http.Server
+		staticDir     http.Dir     //静态文件根目录
+		staticHandler http.Handler //静态文件的HTTP回调
 	)
 
 	//配置路由
@@ -34,6 +36,11 @@ func InitApiServer() (err error) {
 	mux.HandleFunc("/job/delete", handleJobDelete) //删除任务
 	mux.HandleFunc("/job/list", handleJobList)     //获取全部job
 	mux.HandleFunc("/job/kill", handleJobKill)     //杀死指定job
+
+	//配置静态文件目录
+	staticDir = http.Dir(G_config.WebRoot)
+	staticHandler = http.FileServer(staticDir)
+	mux.Handle("/", http.StripPrefix("/", staticHandler))
 
 	//启动tcp监听
 	listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiPort))
