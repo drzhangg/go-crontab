@@ -89,10 +89,12 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 	//获取当前有哪些任务
 	for _, kvpair = range getResp.Kvs {
 		//反序列化json得到job
-		job, err = common.UnpackJob(kvpair.Value)
-		if err == nil {
-			//TODO:把这个job同步给scheduler（调度协程）
+		if job, err = common.UnpackJob(kvpair.Value); err == nil {
 			jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
+
+			//把这个job同步给scheduler（调度协程）
+			G_scheduler.PushJobEvent(jobEvent)
+			fmt.Println(*jobEvent)
 		}
 	}
 
@@ -102,10 +104,10 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 		watchStartRevision = getResp.Header.Revision + 1
 
 		//监听/cron/jobs/目录的后续变化
-		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision))
+		watchChan = jobMgr.watcher.Watch(context.TODO(), common.JOB_SAVE_DIR, clientv3.WithRev(watchStartRevision), clientv3.WithPrefix())
 		//处理监听事件
 		for watchResp = range watchChan {
-			for watchEvent = range watchResp.Events {
+			for _, watchEvent = range watchResp.Events {
 				switch watchEvent.Type {
 				case mvccpb.PUT: //任务保存事件
 					if job, err = common.UnpackJob(watchEvent.Kv.Value); err != nil {
@@ -114,7 +116,6 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 					//构建一个更新Event
 					jobEvent = common.BuildJobEvent(common.JOB_EVENT_SAVE, job)
 
-					//TODO:推送给scheduler
 				case mvccpb.DELETE: //任务删除事件
 					jobName = common.ExtractJobName(string(watchEvent.Kv.Value))
 
@@ -122,8 +123,13 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 					//构建一个删除Event
 					jobEvent = common.BuildJobEvent(common.JOB_EVENT_DELETE, job)
 				}
+
+				//推送给scheduler
+				 G_scheduler.PushJobEvent(jobEvent)
 			}
 		}
 
 	}()
+
+	return
 }
