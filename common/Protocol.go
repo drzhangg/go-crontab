@@ -22,6 +22,13 @@ type JobSchedulePlan struct {
 	NextTime time.Time            //下次调度时间
 }
 
+//任务执行状态
+type JobExecuteInfo struct {
+	Job      *Job      //任务信息
+	PlanTime time.Time //理论上的调度时间
+	RealTime time.Time //实际的调度时间
+}
+
 //http请求
 type Response struct {
 	ErrNo int         `json:"errNo"`
@@ -33,6 +40,15 @@ type Response struct {
 type JobEvent struct {
 	EventType int // SAVE,DELETE
 	Job       *Job
+}
+
+//任务执行结果
+type JobExecuteResult struct {
+	ExecuteInfo *JobExecuteInfo //执行状态
+	Output      []byte          //脚本输出
+	Err         error           //脚本错误原因
+	StartTime   time.Time       //启动时间
+	EndTime     time.Time       //结束时间
 }
 
 //应答方法
@@ -98,5 +114,15 @@ func BuildJobSchedulePlan(job *Job) (jobSchedulePlan *JobSchedulePlan, err error
 		NextTime: expr.Next(time.Now()),
 	}
 
+	return
+}
+
+//构造执行状态信息
+func BuildJobExecuteInfo(jobSchedulePlan *JobSchedulePlan) (jobExecuteInfo *JobExecuteInfo) {
+	jobExecuteInfo = &JobExecuteInfo{
+		Job:      jobSchedulePlan.Job,
+		PlanTime: jobSchedulePlan.NextTime, //计算调度时间
+		RealTime: time.Now(),               //真是调度时间
+	}
 	return
 }
