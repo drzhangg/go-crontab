@@ -125,11 +125,17 @@ func (jobMgr *JobMgr) watchJobs() (err error) {
 				}
 
 				//推送给scheduler
-				 G_scheduler.PushJobEvent(jobEvent)
+				G_scheduler.PushJobEvent(jobEvent)
 			}
 		}
 
 	}()
 
+	return
+}
+
+//创建任务执行锁
+func (jobMgr *JobMgr) CreateJobLock(jobName string) (jobLock *JobLock) {
+	jobLock = InitJobLock(jobName, jobMgr.kv, jobMgr.lease)
 	return
 }

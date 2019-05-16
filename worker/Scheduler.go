@@ -75,7 +75,7 @@ func (scheduler *Scheduler) TryStartJob(jobPlan *common.JobSchedulePlan) {
 
 	//执行任务
 	fmt.Println("执行任务:", jobExecuteInfo.Job.Name, jobExecuteInfo.PlanTime, jobExecuteInfo.RealTime)
-	G_executor.ExcuteJob(jobExecuteInfo)
+	G_executor.ExecuteJob(jobExecuteInfo)
 
 }
 
