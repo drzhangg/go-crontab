@@ -62,6 +62,9 @@ func InitJobMgr() (err error) {
 	//启动任务监听
 	G_jobMgr.watchJobs()
 
+	//启动监听killer
+	G_jobMgr.watchKiller()
+
 	return
 }
 

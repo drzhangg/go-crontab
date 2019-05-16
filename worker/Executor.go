@@ -1,8 +1,8 @@
 package worker
 
 import (
-	"context"
 	"github.com/drzhangg/go-crontab/common"
+	"math/rand"
 	"os/exec"
 	"time"
 )
@@ -44,6 +44,8 @@ func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 		result.StartTime = time.Now()
 
 		//上锁
+		//随机睡眠(0-1秒)
+		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 		err = jobLock.TryLock()
 		defer jobLock.Unlock()
 
@@ -55,7 +57,7 @@ func (executor *Executor) ExecuteJob(info *common.JobExecuteInfo) {
 			result.StartTime = time.Now()
 
 			//执行shell命令
-			cmd = exec.CommandContext(context.TODO(), "/bin/bash", "-c", info.Job.Command)
+			cmd = exec.CommandContext(info.CancelCtx, "/bin/bash", "-c", info.Job.Command)
 
 			//执行并捕获输出
 			output, err = cmd.CombinedOutput()
