@@ -8,8 +8,12 @@ import (
 
 //配置列表
 type Config struct {
-	EtcdEndPoints   []string `json:"etcdEndPoints"`		//etcd集群列表
-	EtcdDialTimeout int `json:"etcdDialTimeout"`	//etcd超时时间
+	EtcdEndPoints         []string `json:"etcdEndPoints"`   //etcd集群列表
+	EtcdDialTimeout       int      `json:"etcdDialTimeout"` //etcd超时时间
+	MongodbUri            string   `json:"mongodbUri"`
+	MongodbConnectTimeout int      `json:"mongodbConnectTimeout"`
+	JobLogBatchSize       int      `json:"jobLogBatchSize"`
+	JobLogCommitTimeout   int      `json:"jobLogCommitTimeout"`
 }
 
 var (
@@ -17,20 +21,20 @@ var (
 )
 
 func InitConfig(filename string) (err error) {
-	var(
+	var (
 		content []byte
-		conf Config
+		conf    Config
 	)
 
 	//1.读取配置文件
-	content,err = ioutil.ReadFile(filename)
+	content, err = ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Println("readFile failed:",err)
+		fmt.Println("readFile failed:", err)
 		return
 	}
 
 	//2.反序列化读取的配置文件
-	err = json.Unmarshal(content,&conf)
+	err = json.Unmarshal(content, &conf)
 	if err != nil {
 		return
 	}
