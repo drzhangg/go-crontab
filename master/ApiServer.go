@@ -36,7 +36,8 @@ func InitApiServer() (err error) {
 	mux.HandleFunc("/job/delete", handleJobDelete) //删除任务
 	mux.HandleFunc("/job/list", handleJobList)     //获取全部job
 	mux.HandleFunc("/job/kill", handleJobKill)     //杀死指定job
-	mux.HandleFunc("/job/log", handleJobLog)
+	mux.HandleFunc("/job/log", handleJobLog)       //日志监听保存接口
+	mux.HandleFunc("/worker/list", handleWorkerList)
 
 	//配置静态文件目录
 	staticDir = http.Dir(G_config.WebRoot)
@@ -192,7 +193,7 @@ func handleJobKill(w http.ResponseWriter, r *http.Request) {
 	var (
 		err     error
 		jobName string
-		bytes    []byte
+		bytes   []byte
 	)
 
 	if err = r.ParseForm(); err != nil {
@@ -262,5 +263,27 @@ func handleJobLog(resp http.ResponseWriter, req *http.Request) {
 ERR:
 	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
 		resp.Write(bytes)
+	}
+}
+
+//获取健康worker节点列表
+func handleWorkerList(w http.ResponseWriter, r *http.Request) {
+	var (
+		workerArr []string
+		err       error
+		bytes     []byte
+	)
+	if workerArr, err = G_workerMgr.ListWorkers(); err != nil {
+		goto ERR
+	}
+
+	if bytes, err = common.BuildResponse(0, "success", workerArr); err == nil {
+		w.Write(bytes)
+	}
+
+	return
+ERR:
+	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		w.Write(bytes)
 	}
 }
