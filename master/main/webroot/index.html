@@ -240,6 +240,7 @@
 
         //保存任务
         $('#save-job').on('click', function () {
+            console.log("点击保存事件")
             var jobInfo = {
                 name: $('#edit-name').val(),
                 command: $('#edit-command').val(),
@@ -251,6 +252,7 @@
                 dataType: 'json',
                 data: {job: JSON.stringify(jobInfo)},
                 complete: function () {
+                    console.log("data:",jobInfo)
                     window.location.reload()
                 }
             })
