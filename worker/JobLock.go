@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/drzhangg/go-crontab/common"
+	"go-corntab/common"
 )
 
 //分布式锁（通过抢占一个TXN事务，谁先抢到谁就占到了🔐）

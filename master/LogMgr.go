@@ -2,10 +2,9 @@ package master
 
 import (
 	"context"
-	"github.com/drzhangg/go-crontab/common"
 	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
-	"github.com/mongodb/mongo-go-driver/mongo/findopt"
+	"go-corntab/common"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
@@ -24,8 +23,10 @@ func InitLogMgr() (err error) {
 		client *mongo.Client
 	)
 
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(G_config.MongodbConnectTimeout)*time.Millisecond)
+	defer cancel()
 	//建立mongodb连接
-	if client, err = mongo.Connect(context.TODO(), G_config.MongodbUri, clientopt.ConnectTimeout(time.Duration(G_config.MongodbConnectTimeout)*time.Millisecond)); err != nil {
+	if client, err = mongo.Connect(ctx, options.Client().ApplyURI(G_config.MongodbUri)); err != nil {
 		return
 	}
 
@@ -41,7 +42,7 @@ func (logMgr *LogMgr) ListLog(name string, skip int, limit int) (logArr []*commo
 	var (
 		filter  *common.JobLogFilter
 		logSort *common.SortLogByStartTime
-		cursor  mongo.Cursor
+		cursor  *mongo.Cursor
 		jobLog  *common.JobLog
 	)
 
@@ -53,8 +54,14 @@ func (logMgr *LogMgr) ListLog(name string, skip int, limit int) (logArr []*commo
 	//按照任务开始时间倒排
 	logSort = &common.SortLogByStartTime{SortOrder: -1}
 
+	var skip1 = int64(skip)
+	var limit1 = int64(limit)
 	//查询
-	cursor, err = logMgr.logCollection.Find(context.TODO(), filter, findopt.Sort(logSort), findopt.Skip(int64(skip)), findopt.Limit(int64(limit)))
+	cursor, err = logMgr.logCollection.Find(context.TODO(), filter, &options.FindOptions{
+		Sort:  logSort,
+		Skip:  &skip1,
+		Limit: &limit1,
+	})
 	if err != nil {
 		return
 	}

@@ -3,7 +3,7 @@ package worker
 import (
 	"context"
 	"github.com/coreos/etcd/clientv3"
-	"github.com/drzhangg/go-crontab/common"
+	"go-corntab/common"
 	"net"
 	"time"
 )

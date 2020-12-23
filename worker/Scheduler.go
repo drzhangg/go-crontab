@@ -2,7 +2,7 @@ package worker
 
 import (
 	"fmt"
-	"github.com/drzhangg/go-crontab/common"
+	"go-corntab/common"
 	"time"
 )
 

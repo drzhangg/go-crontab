@@ -3,7 +3,7 @@ package master
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/drzhangg/go-crontab/common"
+	"go-corntab/common"
 	"net"
 	"net/http"
 	"strconv"
@@ -100,8 +100,10 @@ func handleJobSave(resp http.ResponseWriter, req *http.Request) {
 	//4.保存数据到etcd
 	old, err = G_jobMgr.SaveJob(&job)
 	if err != nil {
+		fmt.Println("errr:", err)
 		goto ERR
 	}
+	fmt.Println("SaveJob:", old)
 
 	//5.请求成功，返回消息
 	re, err = common.BuildResponse(0, "success", old)
@@ -109,6 +111,7 @@ func handleJobSave(resp http.ResponseWriter, req *http.Request) {
 		fmt.Println("rebuildResp:", err)
 		resp.Write(re)
 	}
+	fmt.Println("rebuildResp1:", err)
 	return
 ERR:
 	//请求失败，返回错误信息

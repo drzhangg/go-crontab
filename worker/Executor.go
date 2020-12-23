@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/drzhangg/go-crontab/common"
+	"go-corntab/common"
 	"math/rand"
 	"os/exec"
 	"time"

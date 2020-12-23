@@ -43,6 +43,8 @@ func InitConfig(filename string) (err error) {
 		return
 	}
 
+	fmt.Println("config:", conf)
+
 	//3.赋值单例
 	G_config = &conf
 

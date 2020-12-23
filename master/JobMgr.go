@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/drzhangg/go-crontab/common"
+	"go-corntab/common"
 	"time"
 )
 
@@ -70,20 +70,29 @@ func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 	//etcd的保存key
 	jobKey = common.JOB_SAVE_DIR + job.Name
 
+	fmt.Println("key:", jobKey)
+
 	//json解析job
 	if jobValue, err = json.Marshal(job); err != nil {
+		fmt.Println("Marshal:", err)
 		return
 	}
+
+	fmt.Println("jobValue:", string(jobValue))
 
 	//通过kv保存jobValue到etcd，并且查询保存前的值
 	putResp, err = jobMgr.kv.Put(context.TODO(), jobKey, string(jobValue), clientv3.WithPrevKV())
 	if err != nil {
+		fmt.Println("err:", err)
 		return
 	}
+
+	fmt.Println("put success:", putResp)
 
 	//如果保存前有值，返回旧值
 	if putResp.PrevKv != nil {
 		if err = json.Unmarshal([]byte(putResp.PrevKv.Value), &oldJobObj); err != nil {
+			fmt.Println("err:", err)
 			err = nil
 			return
 		}
@@ -183,7 +192,7 @@ func (jobMgr *JobMgr) KillJob(name string) (err error) {
 	/**
 	这里其实是每次put进etcd中一个空值，然后给他一个1秒的租约，当租约过期时，这个etcd就会被delete，
 	以此达到kill的效果
-	 */
+	*/
 	//设置kill标记
 	_, err = jobMgr.kv.Put(context.TODO(), killKey, "", clientv3.WithLease(leaseId))
 	if err != nil {
